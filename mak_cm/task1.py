@@ -1,5 +1,4 @@
-'''Задача 1. 
-Про тестирование: '''
+'''Задача 1.'''
 
 
 import numpy as np
@@ -35,7 +34,7 @@ def cond_v(A):
 def cond_a(A):
     '''Угловое число обусловленности(использует евклидову норму)'''
     C = np.linalg.inv(A)
-    return np.max([np.linalg.norm(row)*np.linalg.norm(column)
+    return np.max([np.abs(np.linalg.norm(row))*np.abs(np.linalg.norm(column))
                    for row, column in zip(A, C.T)])
 
 
