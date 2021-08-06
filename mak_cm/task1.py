@@ -52,7 +52,7 @@ def matrices_for_test():
 
 
 def exact_solutions_for_test(l_A):
-    '''Возвращает точное решение для тестов
+    '''Возвращает точное решение для тестов: случайный вектор и единичный
     l_A - список матриц'''
     return [[np.random.randn(A.shape[1]), np.full(A.shape[1], 1)]
             for A in l_A]
@@ -83,6 +83,7 @@ def test(A, x):
 
 
 if __name__ == '__main__':
+    # Краткий вывод матриц
     np.set_printoptions(precision=4)
     # Инициализация генератора случайных чисел
     np.random.seed(123)
