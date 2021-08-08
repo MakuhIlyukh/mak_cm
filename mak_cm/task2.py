@@ -2,8 +2,8 @@
 
 
 import numpy as np
-from numpy.linalg.linalg import cond
 from scipy.linalg.special_matrices import hilbert
+import pandas as pd
 
 from task1 import cond_s
 
@@ -35,22 +35,69 @@ def comp_values(A, x, alpha):
     '''Вычисляет спектральные числа обусловленности
      и норму разности погрешности(max(abs))'''
     b = A.dot(x)
-    A2 = A + alpha * np.eye(A.shape[0])
-    x_app = LL_solve(A2, b)
+    A2 = A + alpha * np.eye(A.shape[0]) # A + alpha*E
+    x_app = LL_solve(A2, b) # приблизительное решение
     A_cond_s = cond_s(A)
     A2_cond_s = cond_s(A2)
-    return A_cond_s, A2_cond_s, np.linalg.norm(x-x_app, ord=np.inf)
+    error_norm = np.linalg.norm(x - x_app, ord=np.inf) # norm = max(abs(x-x0))
+    return A_cond_s, A2_cond_s, error_norm
+
+
+def print_table(table, columns, precision=3):
+    '''Вывод таблицы'''
+    df = pd.DataFrame(table, columns=columns)
+    pd.set_option('precision', precision)
+    print(df)
 
 
 def iterate_alpha_for_test(A, x):
     '''Перебирает alpha, возвращает лучшее'''
-    for alpha in map(lambda i: 10**i, range(-12, 0)):
+    table = list() # Таблица результатов для разных alpha
+    alphas = list(map(lambda i: 10**i, range(-12, 0)))
+    for alpha in alphas:
         A_cond_s, A2_cond_s, error_norm = comp_values(A, x, alpha)
-        print(f'{A_cond_s:.3f}\t{A2_cond_s:.3f}\t{error_norm:.3f}')
+        table.append((alpha, A_cond_s, A2_cond_s, error_norm))
+    print_table(table, ['alpha', 'A cond_s', '(A + alpha*E) cond_s', '||x-x0||'])
+    print()
+    # Лучшее alpha, для которого обусловленность меньше 10^4 и норма наименьшая
+    return alphas[np.argmin([row[3] if row[2] < 1e+4 else np.inf
+                             for row in table])]
      
+
+def test_alpha(A, alpha):
+    '''Выводит результаты для случайного вектора
+    Норма - max(abs())
+    '''
+    print('Лучшее alpha:', alpha)
+    x0 = np.random.randn(A.shape[1]) # Случайный вектор
+    b = A.dot(x0)
+    alphas = [0, 0.1*alpha, alpha, 10*alpha]
+    errors = list()
+    for alp in alphas:
+        x = LL_solve(A + alp*np.eye(A.shape[0]), b)
+        errors.append(np.linalg.norm(x-x0, ord=np.inf)) # Норма - max(abs())
+    print('Нормы погрешности: ')
+    print_table([errors], columns=['0*alpha', '0.1*alpha', 'alpha', '10*alpha'])
+
+
+def get_matrices_for_test():
+    '''Матрицы для тестов'''
+    return [
+        hilbert(4),
+        hilbert(5),
+        hilbert(7)
+    ]
 
 
 if __name__ == '__main__':
-    np.set_printoptions(precision=4)
+    # Точность вывода
+    np.set_printoptions(precision=3)
+    # seed для датчика случайных чисел
     np.random.seed(15)
-    iterate_alpha_for_test(hilbert(4), np.ones(4))
+    # Для каждой матрицы:
+    for A in get_matrices_for_test():
+        print(A)
+        print()
+        best_alpha = iterate_alpha_for_test(A, np.ones(A.shape[1]))
+        test_alpha(A, best_alpha)
+        print('\n-----------------------------------------------------\n\n')
