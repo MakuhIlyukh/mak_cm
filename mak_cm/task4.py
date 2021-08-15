@@ -169,24 +169,3 @@ if __name__ == '__main__':
     np.random.seed(777)
     test1()
     test2()
-
-
-    # A = np.array([[10, 4, -1], [1, 50, 1], [1, 4, 35]])
-
-    # #
-    # n = 1000
-    # A = np.random.rand(n, n)
-    # for i in range(n):
-    #     A[i, i] = sum([abs(A[i, j]) for j in range(n)])
-    # #
-
-    # x0 = np.random.randn(A.shape[0])
-    # b = A @ x0
-
-    # B, C = StationarySolver.generate_BC(A, b)
-    # solver = Iter()
-    # x, i = iter_solve(A, b, np.zeros_like(x0), solver, 10e-9, 300)
-
-    # print(np.linalg.norm(x - x0, ord=VECTOR_NORM_TYPE))
-    # print(x0)
-    # print(x)
