@@ -51,8 +51,8 @@ def get_system(bp: BoundaryProblem, n: int):
     B[n] = h*bp.bt1 + bp.bt2
     C[0] = bp.ap2
     C[n] = 0
-    D[0] = h * bp.a
-    D[n] = h * bp.b
+    D[0] = h * bp.ap
+    D[n] = h * bp.bt
     for i in range(1, n):
         A[i] = 2*bp.k(x[i]) - h*bp.p(x[i])
         B[i] = -4*bp.k(x[i]) + 2*h*h*bp.q(x[i])
@@ -149,7 +149,7 @@ def get_problems():
 def get_lims():
     '''Границы графиков'''
     return [
-        ((-1, 1), (-3, 1)),
+        ((-1, 1), (-6, 1)),
         ((-1, 1), (0, 6))
     ]
 
