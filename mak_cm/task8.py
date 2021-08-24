@@ -95,10 +95,12 @@ class RitzSolver():
         int_res = self.integrator(int_expr, -1, 1, self.n)
         if rfp.alpha1 == 0 or rfp.alpha2 == 0:
             Q_l = 0
-            Q_r = 0
         else:
             Q_l = (rfp.alpha1 / rfp.alpha2
                    * rfp.p(-1) * basis.w[i](-1) * basis.w[j](-1))
+        if rfp.beta1 == 0 or rfp.beta2 == 0:
+            Q_r = 0
+        else: 
             Q_r = (rfp.beta1 / rfp.beta2 
                    * rfp.p(1) * basis.w[i](1) * basis.w[j](1))
         return int_res + Q_l + Q_r
@@ -129,16 +131,13 @@ def comp(x, basis, coefs):
     return s
 
 
-def jacobi_polynom(n):
-    '''Многочлен Якоби k = 1'''
-    return lambda x: eval_jacobi(n, 1, 1, x)
-
-
 def jacobi_dx(n):
     '''Производные'''
     coefs = jacobi(n, 1, 1)
     coefs_dx = np.polyder(coefs, 1)
-    return lambda x: np.sum(coefs_dx * np.power(x, np.arange(n + 1)))
+    def res(x):
+        return coefs_dx(x)
+    return res
 
 
 def get_basis_1(n):
@@ -156,10 +155,29 @@ def get_basis_1(n):
     l1 = list()
     l2 = list()
     for i in range(n):
-        poly = jacobi_polynom(i)
+        poly = jacobi(i, 1, 1)
         poly_diff = jacobi_dx(i)
         l1.append(foo(poly))
         l2.append(foo2(poly, poly_diff))
+    return Basis(l1, l2)
+
+
+def get_basis_2(n):
+    def foo(i):
+        def bar(x):
+            return (1-x**2)*x**i
+        return bar
+    
+    def foo2(i):
+        def bar2(x):
+            return (1-x**2)*i*x**(i-1) - 2*x*x**i
+        return bar2
+
+    l1 = list()
+    l2 = list()
+    for i in range(n):
+        l1.append(foo(i))
+        l2.append(foo2(i))
     return Basis(l1, l2)
 
 
