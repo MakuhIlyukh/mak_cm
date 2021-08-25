@@ -60,4 +60,93 @@ def explicit(te, N, M, T):
     return u
 
 
-def implicit(te, N, M, T):
+def implicit(te, N, M, T, sigma=0.5):
+    '''Неявный метод'''
+    if sigma == 0:
+        raise ValueError('Invalid sigma value!')
+
+    u = np.empty((N + 1, M + 1))
+    x = np.linspace(0, 1, N + 1)
+    t = np.linspace(0, T, M + 1)
+    h = 1 / N
+    tau = T / M
+
+    def get_system(k):
+        '''to СЛАУ'''
+        A = np.empty(N + 1)
+        B = np.empty(N + 1)
+        C = np.empty(N + 1)
+        D = np.empty(N + 1)
+        A[0] = 0
+        B[0] = te.alpha1(t[k]) + te.alpha2(t[k]) / h
+        C[0] = -te.alpha2(t[k]) / h
+        D[0] = te.alpha(t[k])
+        B[N] = te.beta1(t[k]) + te.beta2(t[k]) / h
+        A[N] = -te.beta2(t[k]) / h
+        C[N] = 0
+        D[N] = te.beta(t[k])
+        for i in range(1, N):
+            coef = sigma * te.a(x[i], t[k]) / h**2
+            A[i] = coef
+            B[i] = -2*coef - 1 / tau
+            C[i] = coef
+            L = (te.a(x[i], t[k - 1])
+                 * (u[i + 1, k - 1] - 2*u[i, k - 1] + u[i - 1, k - 1])
+                 / h**2)
+            # t с чертой как вычислять?
+            D[i] = -1*u[i, k - 1] / tau - (1 - sigma)*L - te.f(x[i], t[k])
+        return A, B, C, D
+
+    def solve_system(A, B, C, D):
+        '''Решает систему методом прогонки'''
+        s = np.zeros(N + 1)
+        t2 = np.zeros(N + 1)
+        y = np.zeros(N + 1)
+        s[0] = - C[0] / B[0]
+        t2[0] = D[0] / B[0]
+        for i in range(1, N + 1):
+            s[i] = -C[i] / (A[i]*s[i - 1] + B[i])
+            t2[i] = (D[i] - A[i]*t2[i - 1]) / (A[i]*s[i - 1] + B[i])
+        y[N] = t2[N]
+        for i in range(N - 1, -1, -1):
+            y[i] = s[i] * y[i + 1] + t2[i]
+        return y
+
+    # step 1
+    for i in range(N + 1):
+        u[i, 0] = 0    
+    # step 2
+    for k in range(1, M + 1):
+        A, B, C, D = get_system(k)
+        u[:, k] = solve_system(A, B, C, D)
+    return u
+
+
+if __name__ == '__main__':
+    np.random.seed(44)
+    # Variant 6
+    N = 1000
+    # M = N*N*4*3*8
+    M = 1000
+    T = 8
+    te = TEquation(
+        a=lambda x, t: 3,
+        f=lambda x, t: 8*t - 18,
+        phi=lambda x: 3*x*x + 5,
+        alpha1=lambda t: 1,
+        alpha2=lambda t: 0,
+        alpha=lambda t: 4*t**2 + 5,
+        beta1=lambda t: 1,
+        beta2=lambda t: 0,
+        beta=lambda t: 4*t**2 + 8
+    )
+
+    # u1 = explicit(te, N, M, T)
+    u2 = implicit(te, N, M, T, sigma=1)
+
+    x = np.linspace(0, 1, N + 1)
+    t = np.linspace(0, T, M + 1)
+    u3 = np.empty((N + 1, M + 1))
+    for i in range(N + 1):
+        for j in range(M + 1):
+            u3[i, j] = 3*x[i]**2 + 4*t[j]**2 + 5
