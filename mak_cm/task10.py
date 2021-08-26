@@ -114,7 +114,7 @@ def implicit(te, N, M, T, sigma=0.5):
 
     # step 1
     for i in range(N + 1):
-        u[i, 0] = 0    
+        u[i, 0] = te.phi(x[i])    
     # step 2
     for k in range(1, M + 1):
         A, B, C, D = get_system(k)
@@ -122,12 +122,18 @@ def implicit(te, N, M, T, sigma=0.5):
     return u
 
 
+def get_good_M(te, N, T):
+    '''Возращает устойчивое M по заданному N'''
+    h = 1 / N
+    tau = h**2 / (2 * te.a(0, 0)) 
+    return int(T / tau) + 1
+
+
 if __name__ == '__main__':
     np.random.seed(44)
     # Variant 6
-    N = 1000
+    N = 50
     # M = N*N*4*3*8
-    M = 1000
     T = 8
     te = TEquation(
         a=lambda x, t: 3,
@@ -140,9 +146,10 @@ if __name__ == '__main__':
         beta2=lambda t: 0,
         beta=lambda t: 4*t**2 + 8
     )
+    M = get_good_M(te, N, T)
 
-    # u1 = explicit(te, N, M, T)
-    u2 = implicit(te, N, M, T, sigma=1)
+    u1 = explicit(te, N, M, T)
+    #u2 = implicit(te, N, M, T, sigma=1)
 
     x = np.linspace(0, 1, N + 1)
     t = np.linspace(0, T, M + 1)
