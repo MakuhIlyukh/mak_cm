@@ -2,6 +2,9 @@
 
 
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as ani
+from tqdm import tqdm
 
 
 class TEquation:
@@ -17,6 +20,11 @@ class TEquation:
                  phi,
                  alpha1, alpha2, alpha,
                  beta1, beta2, beta):
+        '''
+        u_t = a(x, t)*u_xx + f(x, t)
+        u(x, 0) = phi(x)
+        alpha1(t)*u(0, t) - alpha2(t)*u(0, t)_x = alpha(t)
+        beta1(t)*u(1, t) + beta2(t)*u(1, t)_x = beta(t) '''
         self.a = a
         self.f = f
         self.phi = phi
@@ -129,31 +137,80 @@ def get_good_M(te, N, T):
     return int(T / tau) + 1
 
 
+def plot_results(te, real_solution, T, l_N, l_M, name):
+    '''Рисует матрицы'''
+    # get solutions
+    l_u1 = list() # real
+    l_u2 = list() # explicit
+    l_u3 = list() # implicit
+    for N, M in tqdm(zip(l_N, l_M)):
+        # real solution
+        u1 = np.empty((N + 1, M + 1))
+        x = np.linspace(0, 1, N + 1)
+        t = np.linspace(0, T, M + 1)
+        for i in range(N + 1):
+            for j in range(M + 1):
+                u1[i, j] = real_solution(x[i], t[j])
+        # explicit solution
+        u2 = explicit(te, N, M, T)
+        # implicit solution
+        u3 = implicit(te, N, M, T, sigma=1)
+        # append to list
+        l_u1.append(u1)
+        l_u2.append(u2)
+        l_u3.append(u3)
+    
+    # animate results
+    fig, ax = plt.subplots(2, 2, sharex=True, sharey=True, figsize=(13, 6))
+
+    def animate(i):
+        fig.suptitle(f'{l_N[i], l_M[i]}')
+        for k in range(2):
+            for l in range(2):
+                ax[k, l].clear()
+                ax[k, l].axis('off')
+
+        ax[0, 0].set_title('real')
+        ax[0, 1].set_title('max(abs(explicit - real)) = '
+                           f'{np.max(np.abs(l_u2[i] - l_u1[i]))}')
+        ax[1, 0].set_title('max(abs(implicit - real)) = '
+                           f'{np.max(np.abs(l_u3[i] - l_u1[i]))}')
+        
+        ax[0, 0].matshow(l_u1[i], aspect='auto')
+        ax[0, 1].matshow(l_u2[i], aspect='auto')
+        ax[1, 0].matshow(l_u3[i], aspect='auto')
+        
+    animation = ani.FuncAnimation(fig, animate, frames=len(l_N), interval=200, repeat=False)
+    animation.save(name, writer='html', fps=1)
+        
+
+def get_problem():
+    real_solution = lambda x, t: 2*x**2 + 3*t**2 + 1
+    te = TEquation(
+        a=lambda x, t: 1,
+        f=lambda x, t: 6*t - 4,
+        phi=lambda x: real_solution(x, 0),
+        alpha=lambda t: real_solution(0, t),
+        alpha1=lambda t: 1,
+        alpha2=lambda t: 0,
+        beta=lambda t: real_solution(1, t),
+        beta1=lambda t: 1,
+        beta2=lambda t: 0 
+    )
+    T = 0.1
+    return real_solution, te, T
+
+
 if __name__ == '__main__':
     np.random.seed(44)
     # Variant 6
-    N = 50
-    # M = N*N*4*3*8
-    T = 8
-    te = TEquation(
-        a=lambda x, t: 3,
-        f=lambda x, t: 8*t - 18,
-        phi=lambda x: 3*x*x + 5,
-        alpha1=lambda t: 1,
-        alpha2=lambda t: 0,
-        alpha=lambda t: 4*t**2 + 5,
-        beta1=lambda t: 1,
-        beta2=lambda t: 0,
-        beta=lambda t: 4*t**2 + 8
-    )
-    M = get_good_M(te, N, T)
+    real_solution, te, T = get_problem()
 
-    u1 = explicit(te, N, M, T)
-    #u2 = implicit(te, N, M, T, sigma=1)
+    # Неустойчивое решение
+    l_N = list(range(5, 50, 5))
+    l_M = list(range(5, 50, 5))
+    plot_results(te, real_solution, T, l_N, l_M, 'Неустойчивое.html')
 
-    x = np.linspace(0, 1, N + 1)
-    t = np.linspace(0, T, M + 1)
-    u3 = np.empty((N + 1, M + 1))
-    for i in range(N + 1):
-        for j in range(M + 1):
-            u3[i, j] = 3*x[i]**2 + 4*t[j]**2 + 5
+    l_N = list(range(5, 50, 5))
+    l_M = list(map(lambda N: get_good_M(te, N, T), range(5, 50, 5)))
+    plot_results(te, real_solution, T, l_N, l_M, 'Устойчивое.html')
