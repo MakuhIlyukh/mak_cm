@@ -66,6 +66,7 @@ class KMeans:
     def fit(self, X, start_generator=StartGenerators.random_init):
         if self.is_used:
             raise OneCallException('Создайте новый объект для использования')
+        self.is_used = True
         self.dim = X.shape[1]
         self.centers = start_generator(self.k, X)
         old_labels = self.predict(X)
